@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "compiller": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Users\\fomenko.ev\\Documents\\prog.txt"
+    }
+  }
+}
