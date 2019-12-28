@@ -10,9 +10,10 @@ namespace compiller
     {
         static void Main(string[] args)
         {
-            Lexer lex = new Lexer();
+            compiller.Lexer.Lexer lex = new compiller.Lexer.Lexer();
             Parser parse = new Parser(lex);
             parse.program();
+            /**
             using (StreamReader sr = File.OpenText(args[0]))
             {
                 string s,str = "";
@@ -26,7 +27,9 @@ namespace compiller
                 
             }
         }
+    **/
     }
+/**
     public enum TokenType
     {
         Int,
@@ -72,5 +75,5 @@ namespace compiller
 
         }
     }
-
+**/
 }

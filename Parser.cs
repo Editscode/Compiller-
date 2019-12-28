@@ -6,7 +6,7 @@ namespace compiller
 {
     class Parser
     {
-        public Parser(Lexer lex){
+        public Parser(compiller.Lexer.Lexer lex){
             
         }
 
