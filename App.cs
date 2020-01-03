@@ -13,6 +13,9 @@ namespace compiller
             compiller.Lexer.Lexer lex = new compiller.Lexer.Lexer();
             Parser parse = new Parser(lex);
             parse.program();
+        }
+    }
+}
             /**
             using (StreamReader sr = File.OpenText(args[0]))
             {
@@ -28,7 +31,7 @@ namespace compiller
             }
         }
     **/
-    }
+    
 /**
     public enum TokenType
     {
@@ -76,4 +79,4 @@ namespace compiller
         }
     }
 **/
-}
+
