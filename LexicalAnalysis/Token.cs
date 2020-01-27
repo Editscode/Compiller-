@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace compiller
+namespace compiller.Lexer
 {
-    class Inter
+    class Token
     {
     }
 }

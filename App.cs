@@ -10,9 +10,8 @@ namespace compiller
     {
         static void Main(string[] args)
         {
-            compiller.Lexer.Lexer lex = new compiller.Lexer.Lexer();
-            Parser parse = new Parser(lex);
-            parse.program();
+            Lexer.Lexer lexer = new Lexer.Lexer();
+            lexer.Scan(files);
         }
     }
 }

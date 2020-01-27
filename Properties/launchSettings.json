@@ -2,7 +2,7 @@
   "profiles": {
     "compiller": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\fomenko.ev\\Documents\\prog.txt"
+      "commandLineArgs": "int x = 2;"
     }
   }
 }
