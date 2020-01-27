@@ -271,9 +271,63 @@ namespace Compiller.LexicalAnalysis
                         ScanChar();
                         continue;
                     }
+                    if (_peek == '/')
+                    {
+                        JumpComment();
+                        continue;
+                    }
                 }
                 _streamReader.Close();
             }
+        }
+
+        private void JumpComment()
+        {
+            Readch();
+            if (_peek == '/')
+                for (; ; Readch())
+                {
+                    if (_peek == '\n')
+                    {
+                        AddToken(TokenType.EOL, 0);
+                        Readch();
+                        return;
+                    }
+
+                    if (_streamReader.EndOfStream)
+                        return;
+                }
+
+            if (_peek == '*')
+            {
+                Readch();
+                for (; ; Readch())
+                {
+                    if (_peek == '\n')
+                    {
+                        AddToken(TokenType.EOL, 0);
+                        Readch();
+                    }
+
+                    if (_peek == '*')
+                    {
+                        Readch();
+                        if (_peek == '/')
+                        {
+                            Readch();
+                            return;
+                        }
+                    }
+
+                    if (_streamReader.EndOfStream)
+                    {
+                        AddToken(TokenType.EOF, 0);
+                        return;
+                    }
+                }
+            }
+
+            AddToken(TokenType.Sign, "/", -1);
         }
 
         private void ScanChar()
