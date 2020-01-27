@@ -38,7 +38,7 @@ namespace Compiller.LexicalAnalysis
         private string[] _files;
 
 
-        private readonly List<List<Token>> s_tokens = new List<List<Token>>();
+        public readonly List<List<Token>> s_tokens = new List<List<Token>>();
         private int _index;
 
         static Lexer()
@@ -134,107 +134,6 @@ namespace Compiller.LexicalAnalysis
             return NextToken;
         }
 
-        public Token Peek(int forward)
-        {
-            Debug.Assert(forward > 0);
-            int index = _index;
-            Token resuilt = null;
-            for (int i = 0; i < forward; i++)
-            {
-                resuilt = Next();
-            }
-
-            _index = index;
-            return resuilt;
-        }
-
-        public Token Back()
-        {
-            _index--;
-            while (true)
-            {
-                if (_index == 0)
-                {
-                    FileIndex--;
-                    _index = s_tokens[FileIndex].Count - 1;
-                }
-
-                NextToken = s_tokens[FileIndex][--_index];
-                NextTokenType = NextToken.Type;
-                switch (NextTokenType)
-                {
-                    case TokenType.Blank:
-                        continue;
-                    case TokenType.EOL:
-                        Line++;
-                        continue;
-                }
-
-                break;
-            }
-
-            _index++;
-            NextTokenContent = NextToken.Content;
-            return NextToken;
-        }
-
-        public void NextLine()
-        {
-            Line++;
-            Next();
-        }
-
-        public bool Match(TokenType type) => NextTokenType == type;
-        public bool Match(string content) => NextTokenContent == content;
-
-        public bool MatchNow(TokenType type)
-        {
-            bool b = NextTokenType == type;
-            Next();
-            return b;
-        }
-
-        public bool MatchNow(string content)
-        {
-            bool b = NextTokenContent == content;
-            Next();
-            return b;
-        }
-
-        public bool MatchNext(TokenType type)
-        {
-            Next();
-            return NextTokenType == type;
-        }
-
-        public bool MatchNext(string content)
-        {
-            Next();
-            return NextTokenContent == content;
-        }
-
-        public Token Eat(TokenType type)
-        {
-            if (Match(type))
-            {
-                Token t = NextToken;
-                Next();
-                return t;
-            }
-            else return null;
-        }
-
-        public Token Eat(string content)
-        {
-            if (Match(content))
-            {
-                Token t = NextToken;
-                Next();
-                return t;
-            }
-            else return null;
-        }
-
         public void Scan(string[] files)
         {
             _files = files;
@@ -281,9 +180,50 @@ namespace Compiller.LexicalAnalysis
                         ScanSign();
                         continue;
                     }
+                    if (char.IsNumber(_peek))
+                    {
+                        ScanNumber();
+                        continue;
+                    }
+                    return;
                 }
                 _streamReader.Close();
             }
+        }
+
+        private void ScanNumber()
+        {
+            StringBuilder sb = new StringBuilder();
+            while (char.IsDigit(_peek))
+            {
+                sb.Append(_peek);
+                Readch();
+            }
+
+            if (char.IsLetter(_peek) || _peek == '_') { return; }
+            if (_peek != '.')
+            {
+                if (int.TryParse(sb.ToString(), out int n))
+                {
+                    AddToken(TokenType.NumericLiteralToken, sb.ToString(), -sb.Length);
+                    return;
+                }
+                return; 
+            }
+
+            sb.Append(_peek);
+            Readch();
+            for (; ; Readch())
+            {
+                if (!char.IsDigit(_peek)) break;
+                sb.Append(_peek);
+            }
+
+            if (char.IsLetter(_peek) || _peek == '_') { return; } 
+            if (float.TryParse(sb.ToString(), out float f))
+                AddToken(TokenType.FloatLiteralToken, sb.ToString(), -sb.Length);
+            else
+                return;
         }
 
         private void ScanSign()

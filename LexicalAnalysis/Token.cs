@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Compiller.Lexer
+namespace Compiller.LexicalAnalysis
 {
     public class Token
     {

@@ -1,8 +1,7 @@
 {
   "profiles": {
     "compiller": {
-      "commandName": "Project",
-      "commandLineArgs": "int x = 2;"
+      "commandName": "Project"
     }
   }
 }
