@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace compiller.Lexer
+namespace Compiller.LexicalAnalysis
 {
     public enum TokenType
     {

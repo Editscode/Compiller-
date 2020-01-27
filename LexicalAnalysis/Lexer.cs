@@ -5,9 +5,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-namespace compiller.Lexer
+namespace Compiller.LexicalAnalysis
 {
-    public class Lexer
+    internal class Lexer
     {
         public Token NextToken;
         public string NextTokenContent;
@@ -251,10 +251,115 @@ namespace compiller.Lexer
         {
             for (int i = 0; i < _files.Length; i++, FileIndex = i)
             {
-                
+                //загрузка тестовых файлов
+                _streamReader = new StreamReader(new FileStream(_files[i], FileMode.Open));
+                Readch();
+                for (; !_streamReader.EndOfStream; ScanBlank())
+                {
+                    if (char.IsLetter(_peek) || _peek == '_')
+                    {
+                        ScanIdentifer();
+                        continue;
+                    }
+                    if (_peek == '"')
+                    {
+                        ScanString();
+                        continue;
+                    }
+                }
                 _streamReader.Close();
             }
         }
 
+        private void ScanString()
+        {
+            Readch();
+            StringBuilder sb = new StringBuilder();
+            for (; _peek != '"'; Readch())
+            {
+                if (_peek == '\n') { return; }
+                if (_peek == '\\')
+                {
+                    sb.Append(ScanEC());
+                    continue;
+                }   
+                sb.Append(_peek);
+            }
+            AddToken(TokenType.StringLiteralToken, sb.ToString(), -sb.Length - 1);
+            Readch();
+        }
+
+        private void ScanIdentifer()
+        {
+            StringBuilder sb = new StringBuilder();
+            do
+            {
+                sb.Append(_peek);
+                Readch();
+            } while (char.IsLetterOrDigit(_peek) || _peek == '_');
+
+            string s = sb.ToString();
+            if (s_keywordsSet.ContainsKey(s))
+                AddToken(s_keywordsSet[s], s, -s.Length);
+            else
+                AddToken(TokenType.Identifer, s, -s.Length);
+        }
+
+        private void Readch()
+        {
+            _peek = (char)_streamReader.Read();
+            Column++;
+        }
+        private void ScanBlank()
+        {
+            for (; ; Readch())
+            {
+                switch (_peek)
+                {
+                    case ' ':
+                    case '\t':
+                        continue;
+                    case '\r':
+                        Column = 0;
+                        continue;
+                    case '\n':
+                        AddToken(TokenType.EOL, 0);
+                        continue;
+                }
+                if (_streamReader.EndOfStream)
+                {
+                    AddToken(TokenType.EOF, 0);
+                    break;
+                }
+                break;
+            }
+        }
+        private void AddToken(TokenType type, int offset)
+        {
+            s_tokens[FileIndex].Add(new Token(type, Line, Column + offset));
+            if (type == TokenType.EOF)
+                FileIndex++;
+            if (type == TokenType.EOL)
+            {
+                Line++;
+                Column = 0;
+            }
+        }
+
+        private void AddToken(string content, int offset) =>
+            s_tokens[FileIndex].Add(new Token(content, Line, Column + offset));
+
+        private void AddToken(TokenType type, string content, int offset)
+        {
+            Token token = new Token(type, Line, Column + offset);
+            token.Content = content;
+            s_tokens[FileIndex].Add(token);
+        }
+        private char ScanEC()
+        {
+            Readch();
+            if (!s_ECSet.ContainsKey(_peek)) { return '\0'; } //TODO:报错 无效的转义字符
+            return s_ECSet[_peek];
+        }
     }
 }

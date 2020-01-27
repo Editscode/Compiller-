@@ -1,81 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Compiller.LexicalAnalysis;
 
-
-
-namespace compiller
+namespace Compiller
 {
     class App
     {
         static void Main(string[] args)
         {
-            Lexer.Lexer lexer = new Lexer.Lexer();
-            lexer.Scan(files);
+            Lexer lexer = new Lexer();
+            lexer.Scan(args);
         }
     }
 }
-            /**
-            using (StreamReader sr = File.OpenText(args[0]))
-            {
-                string s,str = "";
-                while ((s = sr.ReadLine()) != null)
-                {
-                    str += s;
-                    
-                }
-                var t =new Tokenizer(str);
-                Console.WriteLine(t.Next());
-                
-            }
-        }
-    **/
-    
-/**
-    public enum TokenType
-    {
-        Int,
-        Double,
-        String,
-        Bool,
-        Char,
-        operators,
-        punctuators,
-        constans,
-        identifiers,
-        keyWords,
-    }
-    public class Token
-    {
-        public int RowPos { get; set; }
-        public int ColumnPos { get; set; }
-        public string LiteralValue { get; set; }
-        public TokenType TokenType { get; set; }
-        public string SourceValue { get; set; }
-
-        public override string ToString()
-        {
-            return SourceValue;
-        }
-
-    }
-    public class Tokenizer
-    {
-        string str;
-        public Token Next()
-        {
-
-            return
-                new Token()
-                {
-                    SourceValue = "asdfdsfsd"
-                };
-        }
-        public Tokenizer(string str)
-        {
-            this.str = str;
-
-        }
-    }
-**/
+        
 
