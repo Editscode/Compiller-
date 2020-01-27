@@ -49,6 +49,7 @@ namespace Compiller.LexicalAnalysis
         BasicTypeI,
         Identifer,
 
+
         Blank, EOL, EOF,
     }
 }

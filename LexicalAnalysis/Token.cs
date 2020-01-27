@@ -11,7 +11,6 @@ namespace Compiller.LexicalAnalysis
 
         public int Line;
         public int Column;
-        public int File;
 
         public Token(TokenType tokenType, int line, int column)
         {
@@ -26,6 +25,7 @@ namespace Compiller.LexicalAnalysis
             Line = line;
             Column = column;
         }
+     
 
         public override string ToString() => Content ?? Type.ToString();
     }

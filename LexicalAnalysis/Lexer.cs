@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Compiller.LexicalAnalysis
 {
-    internal class Lexer
+    public class Lexer
     {
         public Token NextToken;
         public string NextTokenContent;
@@ -66,6 +66,7 @@ namespace Compiller.LexicalAnalysis
             s_keywordsSet.Add("false", TokenType.FalseKeyword);
             s_keywordsSet.Add("cast", TokenType.CastKeyword);
             s_keywordsSet.Add("public", TokenType.PublicKeyword);
+
 
             s_ECSet.Add('\"', '\"');
             s_ECSet.Add('\'', '\'');

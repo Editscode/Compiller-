@@ -2,8 +2,9 @@
 
 public class Program
 {
-	func Main(string args)
-	{
+	static void Main(string[] args)
+        {
+		string a = "pipa"
 		var int i = 0;
 		let i = 1;
 		var bool b = Test(i);
