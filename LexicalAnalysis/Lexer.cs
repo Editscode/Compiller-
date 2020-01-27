@@ -276,9 +276,42 @@ namespace Compiller.LexicalAnalysis
                         JumpComment();
                         continue;
                     }
+                    if (char.IsSymbol(_peek) || s_signSet.ContainsKey(_peek.ToString()))
+                    {
+                        ScanSign();
+                        continue;
+                    }
                 }
                 _streamReader.Close();
             }
+        }
+
+        private void ScanSign()
+        {
+            char c = _peek;
+            Readch();
+            if (char.IsSymbol(_peek))
+            {
+                string s = c.ToString() + _peek;
+                if (s_signSet.ContainsKey(s))
+                {
+                    AddToken(s_signSet[s], s, -1);
+                    Readch();
+                    return;
+                }
+                if (s_signSet.ContainsKey(_peek.ToString()))
+                {
+                    if (s_signSet.ContainsKey(c.ToString())) AddToken(s_signSet[c.ToString()], c.ToString(), -1);
+                    else return;
+                    AddToken(s_signSet[_peek.ToString()], _peek.ToString(), 0);
+                    Readch();
+                    return;
+                }
+                else return;
+            }
+            if (s_signSet.ContainsKey(c.ToString()))
+                AddToken(s_signSet[c.ToString()], c.ToString(), -1);
+            else return;
         }
 
         private void JumpComment()
@@ -337,14 +370,14 @@ namespace Compiller.LexicalAnalysis
             {
                 char ec = ScanEC();
                 Readch();
-                if (_peek != '\'') { return; } //TODO:报错 字符文本中的字符太多
+                if (_peek != '\'') { return; } 
                 AddToken(TokenType.CharacterLiteralToken, ec.ToString(), -3);
                 Readch();
                 return;
             }
             char c = _peek;
             Readch();
-            if (_peek != '\'') { return; } //TODO:报错 字符文本中的字符太多
+            if (_peek != '\'') { return; } 
             AddToken(TokenType.CharacterLiteralToken, c.ToString(), -2);
             Readch();
         }
