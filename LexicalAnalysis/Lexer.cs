@@ -266,9 +266,33 @@ namespace Compiller.LexicalAnalysis
                         ScanString();
                         continue;
                     }
+                    if (_peek == '\'')
+                    {
+                        ScanChar();
+                        continue;
+                    }
                 }
                 _streamReader.Close();
             }
+        }
+
+        private void ScanChar()
+        {
+            Readch();
+            if (_peek == '\\')
+            {
+                char ec = ScanEC();
+                Readch();
+                if (_peek != '\'') { return; } //TODO:报错 字符文本中的字符太多
+                AddToken(TokenType.CharacterLiteralToken, ec.ToString(), -3);
+                Readch();
+                return;
+            }
+            char c = _peek;
+            Readch();
+            if (_peek != '\'') { return; } //TODO:报错 字符文本中的字符太多
+            AddToken(TokenType.CharacterLiteralToken, c.ToString(), -2);
+            Readch();
         }
 
         private void ScanString()
@@ -282,7 +306,7 @@ namespace Compiller.LexicalAnalysis
                 {
                     sb.Append(ScanEC());
                     continue;
-                }   
+                }
                 sb.Append(_peek);
             }
             AddToken(TokenType.StringLiteralToken, sb.ToString(), -sb.Length - 1);
