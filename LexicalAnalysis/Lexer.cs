@@ -17,13 +17,22 @@ namespace compiller.Lexer
         public int FileIndex;
         public static int FileCount;
         private char _peek = ' ';
+        /// <summary>
+        /// Ключевые слова
+        /// </summary>
         private static readonly Dictionary<string, TokenType> s_keywordsSet = new Dictionary<string, TokenType>();
+        /// <summary>
+        /// Управляющие символы
+        /// </summary>
         private static readonly Dictionary<char, char> s_ECSet = new Dictionary<char, char>();
+        /// <summary>
+        /// Лолгические
+        /// </summary>
         private static readonly Dictionary<string, TokenType> s_signSet = new Dictionary<string, TokenType>();
         private StreamReader _streamReader;
         private string[] _files;
 
-        //文件 第几个词
+        
         private readonly List<List<Token>> s_tokens = new List<List<Token>>();
         private int _index;
         static Lexer() {
@@ -50,13 +59,70 @@ namespace compiller.Lexer
             s_keywordsSet.Add("false", TokenType.FalseKeyword);
             s_keywordsSet.Add("cast", TokenType.CastKeyword);
             s_keywordsSet.Add("public", TokenType.PublicKeyword);
-            /**
-            reserve(Type.Int);
-            reserve(Type.Char);
-            reserve(Type.Bool);
-            reserve(Type.Float);
-    **/
 
+            s_ECSet.Add('\"', '\"');
+            s_ECSet.Add('\'', '\'');
+            s_ECSet.Add('\\', '\\');
+            s_ECSet.Add('b', '\b'); 
+            s_ECSet.Add('f', '\f'); 
+            s_ECSet.Add('t', '\t'); 
+            s_ECSet.Add('r', '\r'); 
+            s_ECSet.Add('n', '\n');
+
+            s_signSet.Add("[", TokenType.OpenBracket);
+            s_signSet.Add("]", TokenType.CloseBracket);
+            s_signSet.Add("(", TokenType.OpenParen);
+            s_signSet.Add(")", TokenType.CloseParen);
+            s_signSet.Add("-", TokenType.Sign);
+            s_signSet.Add("+", TokenType.Sign);
+            s_signSet.Add("!", TokenType.Sign);
+            s_signSet.Add("/", TokenType.Sign);
+            s_signSet.Add("*", TokenType.Sign);
+            s_signSet.Add("%", TokenType.Sign);
+            s_signSet.Add(">", TokenType.Sign);
+            s_signSet.Add(">=", TokenType.Sign);
+            s_signSet.Add("<", TokenType.Sign);
+            s_signSet.Add("<=", TokenType.Sign);
+            s_signSet.Add("==", TokenType.Sign);
+            s_signSet.Add("!=", TokenType.Sign);
+            s_signSet.Add("&&", TokenType.Sign);
+            s_signSet.Add("||", TokenType.Sign);
+            s_signSet.Add(",", TokenType.Sign);
+            s_signSet.Add(".", TokenType.Sign);
+            s_signSet.Add(":", TokenType.Colon);
+            s_signSet.Add("=", TokenType.Assign);
+            s_signSet.Add("+=", TokenType.Assign);
+            s_signSet.Add("-=", TokenType.Assign);
+            s_signSet.Add("*=", TokenType.Assign);
+            s_signSet.Add("/=", TokenType.Assign);
+            s_signSet.Add("%=", TokenType.Assign);
+            s_signSet.Add(";", TokenType.Semicolon);
+            s_signSet.Add("{", TokenType.OpenBrace);
+            s_signSet.Add("}", TokenType.CloseBrace);
+
+        }
+
+        public Token Next()
+        {
+            while (true)
+            {
+                NextToken = s_tokens[FileIndex][_index++];
+                switch (NextToken.Type)
+                {
+                    case TokenType.EOL:
+                        Line++;
+                        continue;
+                    case TokenType.EOF:
+                        Line = 1;
+                        FileIndex++;
+                        break;
+                }
+                break;
+            }
+            NextTokenType = NextToken.Type;
+            NextTokenContent = NextToken.Content;
+            Line = NextToken.Line;
+            return NextToken;
         }
         //метод для чтения входного символа в переменную peek
         void readch() {
