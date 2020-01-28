@@ -114,19 +114,26 @@ namespace Compiller.LexicalAnalysis
         {
             while (true)
             {
-                NextToken = s_tokens[FileIndex][_index++];
-                switch (NextToken.Type)
+                if (NextToken != null)
                 {
-                    case TokenType.EOL:
-                        Line++;
-                        continue;
-                    case TokenType.EOF:
-                        Line = 1;
-                        FileIndex++;
-                        break;
-                }
+                    NextToken = s_tokens[FileIndex][_index++];
+                    switch (NextToken.Type)
+                    {
+                        case TokenType.EOL:
+                            Line++;
+                            continue;
+                        case TokenType.EOF:
+                            Line = 1;
+                            FileIndex++;
+                            break;
+                    }
 
-                break;
+                    break;
+                }
+                else
+                {
+                    return NextToken;
+                }
             }
 
             NextTokenType = NextToken.Type;
@@ -134,6 +141,7 @@ namespace Compiller.LexicalAnalysis
             Line = NextToken.Line;
             return NextToken;
         }
+
 
         public void Scan(string[] files)
         {
@@ -201,8 +209,9 @@ namespace Compiller.LexicalAnalysis
                 Readch();
             }
 
-            if (char.IsLetter(_peek) || _peek == '_') { return; }
-            if (_peek != '.')
+            if (char.IsLetter(_peek) || _peek == '_' ) {return; }//добавить обработку ошибок
+
+            if (_peek != '.' )
             {
                 if (int.TryParse(sb.ToString(), out int n))
                 {
@@ -398,9 +407,6 @@ namespace Compiller.LexicalAnalysis
             }
         }
 
-        private void AddToken(string content, int offset) =>
-            s_tokens[FileIndex].Add(new Token(content, Line, Column + offset));
-
         private void AddToken(TokenType type, string content, int offset)
         {
             Token token = new Token(type, Line, Column + offset);
@@ -410,7 +416,7 @@ namespace Compiller.LexicalAnalysis
         private char ScanEC()
         {
             Readch();
-            if (!s_ECSet.ContainsKey(_peek)) { return '\0'; } //TODO:报错 无效的转义字符
+            if (!s_ECSet.ContainsKey(_peek)) { return '\0'; } 
             return s_ECSet[_peek];
         }
     }

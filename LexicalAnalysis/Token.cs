@@ -19,14 +19,6 @@ namespace Compiller.LexicalAnalysis
             Column = column;
         }
 
-        public Token(string content, int line, int column)
-        {
-            Content = content;
-            Line = line;
-            Column = column;
-        }
-     
-
         public override string ToString() => Content ?? Type.ToString();
     }
 }

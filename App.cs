@@ -13,7 +13,7 @@ namespace Compiller
         {
             string[] lines = new[]
             {
-                @"test\10.b", @"test\9.b", @"test\8.b", @"test\7.b", @"test\6.b", @"test\5.b", @"test\4.b", @"test\3.b", @"test\2.b", @"test\1.b",@"test\Example.b",
+                @"test\1.b"
             };
             Lexer lexer = new Lexer();
             lexer.Scan(lines);
