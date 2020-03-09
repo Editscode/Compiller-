@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Compiller.LexicalAnalysis
+﻿namespace MyCore.LexicalAnalysis
 {
     public enum TokenType
     {
@@ -48,7 +44,6 @@ namespace Compiller.LexicalAnalysis
         BasicType,
         BasicTypeI,
         Identifer,
-
 
         Blank, EOL, EOF,
     }

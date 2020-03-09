@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Compiller.LexicalAnalysis
+﻿namespace MyCore.LexicalAnalysis
 {
     public class Token
     {
@@ -11,10 +7,18 @@ namespace Compiller.LexicalAnalysis
 
         public int Line;
         public int Column;
+        public int File;
 
         public Token(TokenType tokenType, int line, int column)
         {
             Type = tokenType;
+            Line = line;
+            Column = column;
+        }
+
+        public Token(string content, int line, int column)
+        {
+            Content = content;
             Line = line;
             Column = column;
         }
