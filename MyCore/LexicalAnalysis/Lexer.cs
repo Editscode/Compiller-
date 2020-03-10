@@ -10,7 +10,7 @@ namespace MyCore.LexicalAnalysis
 {
     internal class Lexer
     {
-        public Token NextToken;
+        public Token<int> NextToken;
         public string NextTokenContent;
         public TokenType NextTokenType;
 
@@ -26,7 +26,7 @@ namespace MyCore.LexicalAnalysis
         private string[] _files;
 
         //подача нескольких слов
-        public readonly List<List<Token>> s_tokens = new List<List<Token>>();
+        public readonly List<List<Token<int>>> s_tokens = new List<List<Token<int>>>();
         private int _index;
 
         static Lexer()
@@ -96,7 +96,7 @@ namespace MyCore.LexicalAnalysis
             s_signSet.Add("}", TokenType.CloseBrace);
         }
 
-        public Token Next()
+        public Token<int> Next()
         {
             
             while (true)
@@ -125,7 +125,7 @@ namespace MyCore.LexicalAnalysis
 
        
 
-        public Token Back()
+        public Token<int> Back()
         {
             _index--;
             while (true)
@@ -157,7 +157,7 @@ namespace MyCore.LexicalAnalysis
         {
             _files = files;
             for (int i = 0; i < _files.Length; i++)
-                s_tokens.Add(new List<Token>());
+                s_tokens.Add(new List<Token<int>>());
             ScanFiles();
             FileIndex = 0;
             Line = 1;
@@ -434,7 +434,7 @@ namespace MyCore.LexicalAnalysis
 
         private void AddToken(TokenType type, int offset)
         {
-            s_tokens[FileIndex].Add(new Token(type, Line, Column + offset));
+            s_tokens[FileIndex].Add(new Token<int>(type, Line, Column + offset));
             if (type == TokenType.EOF)
                 FileIndex++;
                 Column = 0;
@@ -447,7 +447,7 @@ namespace MyCore.LexicalAnalysis
 
         private void AddToken(TokenType type, string content, int offset)
         {
-            Token token = new Token(type, Line, Column + offset);
+            Token<int> token = new Token<int>(type, Line, Column + offset);
             token.Content = content;
             s_tokens[FileIndex].Add(token);
         }
