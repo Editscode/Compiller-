@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -97,9 +98,12 @@ namespace MyCore.LexicalAnalysis
 
         public Token Next()
         {
+            
             while (true)
             {
+       
                 NextToken = s_tokens[FileIndex][_index++];
+               
                 switch (NextToken.Type)
                 {
                     case TokenType.EOL:
@@ -111,6 +115,7 @@ namespace MyCore.LexicalAnalysis
                         break;
                 }
                 break;
+               
             }
             NextTokenType = NextToken.Type;
             NextTokenContent = NextToken.Content;
@@ -147,34 +152,6 @@ namespace MyCore.LexicalAnalysis
             return NextToken;
         }
 
-        public bool Match(TokenType type) => NextTokenType == type; //TODO: Добавить обработку ошибок
-        public bool Match(string content) => NextTokenContent == content; //TODO: Добавить обработку ошибок
-
-        public bool MatchNext(string content) //TODO: Добавить обработку ошибок
-        {
-            Next();
-            return NextTokenContent == content;
-        }
-        public Token Eat(TokenType type) //TODO: Добавить обработку ошибок
-        {
-            if (Match(type))
-            {
-                Token t = NextToken;
-                Next();
-                return t;
-            }
-            else return null;
-        }
-        public Token Eat(string content) //TODO: Добавить обработку ошибок
-        {
-            if (Match(content))
-            {
-                Token t = NextToken;
-                Next();
-                return t;
-            }
-            else return null;
-        }
 
         public void Scan(string[] files)
         {
@@ -269,7 +246,7 @@ namespace MyCore.LexicalAnalysis
             do
             {
                 sb.Append(_peek);
-                Readch();
+                Readch();   
             } while (char.IsLetterOrDigit(_peek) || _peek == '_');
 
             string s = sb.ToString();
@@ -323,8 +300,6 @@ namespace MyCore.LexicalAnalysis
 
 
             } //TODO:Идентификатор ошибки не может начинаться с цифры
-
-
 
             if (float.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out float f))
                 AddToken(TokenType.FloatLiteralToken, sb.ToString(), -sb.Length);
@@ -462,6 +437,7 @@ namespace MyCore.LexicalAnalysis
             s_tokens[FileIndex].Add(new Token(type, Line, Column + offset));
             if (type == TokenType.EOF)
                 FileIndex++;
+                Column = 0;
             if (type == TokenType.EOL)
             {
                 Line++;
@@ -476,36 +452,5 @@ namespace MyCore.LexicalAnalysis
             s_tokens[FileIndex].Add(token);
         }
 
-
-
-        public Token Peek(int forward)
-        {
-            Debug.Assert(forward > 0);
-            int index = _index;
-            Token resuilt = null;
-            for (int i = 0; i < forward; i++)
-            {
-                resuilt = Next();
-            }
-            _index = index;
-            return resuilt;
-        }
-        public bool MatchNow(TokenType type) //TODO: Добавить обработку ошибок
-        {
-            bool b = NextTokenType == type;
-            Next();
-            return b;
-        }
-        public bool MatchNow(string content) //TODO: Добавить обработку ошибок
-        {
-            bool b = NextTokenContent == content;
-            Next();
-            return b;
-        }
-        public bool MatchNext(TokenType type) //TODO: Добавить обработку ошибок
-        {
-            Next();
-            return NextTokenType == type;
-        }
     }
 }
