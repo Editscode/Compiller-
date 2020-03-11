@@ -12,7 +12,7 @@ namespace MyCore
             lexer.Scan(files);
 
 
-            string path = @"C:\SomeDir2";
+            string path = @"C:\Users\korob\Desktop\GitHub\Compiller-\BCompiller\bin\Debug\netcoreapp3.1\test\otv";
             DirectoryInfo dirInfo = new DirectoryInfo(path);
             if (!dirInfo.Exists)
             {
@@ -48,7 +48,6 @@ namespace MyCore
                         byte[] array = System.Text.Encoding.Default.GetBytes(text);
                         // запись массива байтов в файл
                         fstream.Write(array, 0, array.Length);
-                        Console.WriteLine("Текст записан в файл");
                     }
                 }
                 text = "";

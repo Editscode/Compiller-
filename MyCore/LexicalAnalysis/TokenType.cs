@@ -7,6 +7,11 @@
         NumericLiteralToken,
         CharacterLiteralToken,
 
+        ERRORTOKEN,
+
+        IntKeyword,
+        DoubleKeyword,
+
         TrueKeyword,
         FalseKeyword,
         IfKeyword,
@@ -44,6 +49,8 @@
         BasicType,
         BasicTypeI,
         Identifer,
+        LeftShift,
+        RightShift,
 
         Blank, EOL, EOF,
     }

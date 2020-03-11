@@ -46,7 +46,8 @@ namespace MyCore.LexicalAnalysis
             s_keywordsSet.Add("func", TokenType.FuncKeyword);
             s_keywordsSet.Add("var", TokenType.VarKeyword);
             s_keywordsSet.Add("let", TokenType.LetKeyword);
-            s_keywordsSet.Add("inv", TokenType.InvKeyword);
+            s_keywordsSet.Add("int", TokenType.IntKeyword);
+            s_keywordsSet.Add("double", TokenType.DoubleKeyword);
             s_keywordsSet.Add("new", TokenType.NewKeyword);
             s_keywordsSet.Add("override", TokenType.OverrideKeyword);
             s_keywordsSet.Add("static", TokenType.StaticKeyword);
@@ -64,6 +65,8 @@ namespace MyCore.LexicalAnalysis
             s_ECSet.Add('r', '\r'); //Возврат каретки
             s_ECSet.Add('n', '\n'); //перевод строки
 
+            s_signSet.Add("--", TokenType.Sign);//приоритетный -
+            s_signSet.Add("++", TokenType.Sign);
             s_signSet.Add("[", TokenType.OpenBracket);
             s_signSet.Add("]", TokenType.CloseBracket);
             s_signSet.Add("(", TokenType.OpenParen);
@@ -78,9 +81,12 @@ namespace MyCore.LexicalAnalysis
             s_signSet.Add(">=", TokenType.Sign);
             s_signSet.Add("<", TokenType.Sign);
             s_signSet.Add("<=", TokenType.Sign);
+            s_signSet.Add("<<", TokenType.LeftShift);
+            s_signSet.Add(">>", TokenType.RightShift);
             s_signSet.Add("==", TokenType.Sign);
             s_signSet.Add("!=", TokenType.Sign);
             s_signSet.Add("&&", TokenType.Sign);
+            s_signSet.Add("&", TokenType.Sign);
             s_signSet.Add("||", TokenType.Sign);
             s_signSet.Add(",", TokenType.Sign);
             s_signSet.Add(".", TokenType.Sign);
@@ -98,12 +104,10 @@ namespace MyCore.LexicalAnalysis
 
         public Token Next()
         {
-            
+
             while (true)
             {
-       
                 NextToken = s_tokens[FileIndex][_index++];
-               
                 switch (NextToken.Type)
                 {
                     case TokenType.EOL:
@@ -115,7 +119,7 @@ namespace MyCore.LexicalAnalysis
                         break;
                 }
                 break;
-               
+
             }
             NextTokenType = NextToken.Type;
             NextTokenContent = NextToken.Content;
@@ -123,7 +127,7 @@ namespace MyCore.LexicalAnalysis
             return NextToken;
         }
 
-       
+
 
         public Token Back()
         {
@@ -205,9 +209,9 @@ namespace MyCore.LexicalAnalysis
                         ScanNumber();
                         continue;
                     }
-                    return; 
+                    return;
                 }
-                
+
                 _streamReader.Close();
             }
         }
@@ -228,16 +232,16 @@ namespace MyCore.LexicalAnalysis
                 if (s_signSet.ContainsKey(_peek.ToString()))
                 {
                     if (s_signSet.ContainsKey(c.ToString())) AddToken(s_signSet[c.ToString()], c.ToString(), -1);
-                    else return; 
+                    else return;
                     AddToken(s_signSet[_peek.ToString()], _peek.ToString(), 0);
                     Readch();
                     return;
                 }
-                else return; 
+                else return;
             }
             if (s_signSet.ContainsKey(c.ToString()))
                 AddToken(s_signSet[c.ToString()], c.ToString(), -1);
-            else return; 
+            else return;
         }
 
         private void ScanIdentifer()
@@ -246,7 +250,7 @@ namespace MyCore.LexicalAnalysis
             do
             {
                 sb.Append(_peek);
-                Readch();   
+                Readch();
             } while (char.IsLetterOrDigit(_peek) || _peek == '_');
 
             string s = sb.ToString();
@@ -265,7 +269,11 @@ namespace MyCore.LexicalAnalysis
                 Readch();
             }
 
-            if (char.IsLetter(_peek) || _peek == '_') { return; } //TODO:Идентификатор ошибки не может начинаться с цифры
+            if (char.IsLetter(_peek) || _peek == '_')
+            {
+                AddToken(TokenType.ERRORTOKEN, sb.ToString(), -sb.Length);
+                return;
+            } //TODO:Идентификатор ошибки не может начинаться с цифры
             if (_peek != '.')
             {
                 if (int.TryParse(sb.ToString(), out int n))
@@ -273,6 +281,7 @@ namespace MyCore.LexicalAnalysis
                     AddToken(TokenType.NumericLiteralToken, sb.ToString(), -sb.Length);
                     return;
                 }
+                AddToken(TokenType.ERRORTOKEN, sb.ToString(), -sb.Length);
                 return; //TODO:константа слишком велика
             }
 
@@ -280,7 +289,12 @@ namespace MyCore.LexicalAnalysis
             Readch();
             for (; ; Readch())
             {
-                if (!char.IsDigit(_peek)) break;
+                if (!char.IsDigit(_peek))
+                {
+                    if (_peek == '.')
+                        sb.Append(_peek);
+                    break;
+                }
                 sb.Append(_peek);
             }
 
@@ -296,15 +310,20 @@ namespace MyCore.LexicalAnalysis
                         sb.Append(_peek);
                     }
                 }
-                else return;
 
+                AddToken(TokenType.ERRORTOKEN, sb.ToString(), -sb.Length);
+                return;
+            }
+            //TODO:Идентификатор ошибки не может начинаться с цифры
 
-            } //TODO:Идентификатор ошибки не может начинаться с цифры
-
-            if (float.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out float f))
+            if (float.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out _))
                 AddToken(TokenType.FloatLiteralToken, sb.ToString(), -sb.Length);
             else
-                return; //TODO: константа с плавающей запятой выходит за пределы диапазона
+            {
+                AddToken(TokenType.ERRORTOKEN, sb.ToString(), -sb.Length);
+            }
+            //AddToken(TokenType.ERRORTOKEN, sb.ToString(), -sb.Length);
+            return; //TODO: константа с плавающей запятой выходит за пределы диапазона
         }
 
         private void ScanBlank()
@@ -413,7 +432,8 @@ namespace MyCore.LexicalAnalysis
             }
             char c = _peek;
             Readch();
-            if (_peek != '\'') { return; } //TODO:слишком много символов
+            if (_peek != '\'') { AddToken(TokenType.ERRORTOKEN, c.ToString(), -2); 
+                return; } //TODO:слишком много символов
             AddToken(TokenType.CharacterLiteralToken, c.ToString(), -2);
             Readch();
         }
@@ -435,14 +455,16 @@ namespace MyCore.LexicalAnalysis
         private void AddToken(TokenType type, int offset)
         {
             s_tokens[FileIndex].Add(new Token(type, Line, Column + offset));
-            if (type == TokenType.EOF)
-                FileIndex++;
-                Column = 0;
-            if (type == TokenType.EOL)
+            switch (type)
             {
-                Line++;
-                Column = 0;
+                case TokenType.EOF:
+                    FileIndex++;
+                    break;
+                case TokenType.EOL:
+                    Line++;
+                    break;
             }
+            Column = 0;
         }
 
         private void AddToken(TokenType type, string content, int offset)

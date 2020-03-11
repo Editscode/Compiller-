@@ -1,11 +1,8 @@
 ﻿using MyCore;
 namespace BCompiller
 {
-    class Program
+    internal static class Program
     {
-        static void Main(string[] args)
-        {
-            Compiler.Compile(args);
-        }
+        static void Main(string[] args)=>Compiler.Compile(args);
     }
 }
