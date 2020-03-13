@@ -1,108 +1,75 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace MyCore.LexicalAnalysis
 {
     internal class Lexer
     {
-        public Token NextToken;
-        public string NextTokenContent;
-        public TokenType NextTokenType;
+        private Token NextToken;
+        private string NextTokenContent;
+        private TokenType NextTokenType;
 
-        public int Line = 1;
-        public int Column = 0;
-        public int FileIndex;
-        public static int FileCount;
+        private int Line = 1;
+        private int Column = 0;
+        private int FileIndex;
+        private static int FileCount;
         private char _peek = ' ';
-        private static readonly Dictionary<string, TokenType> s_keywordsSet = new Dictionary<string, TokenType>();
-        private static readonly Dictionary<char, char> s_ECSet = new Dictionary<char, char>();
-        private static readonly Dictionary<string, TokenType> s_signSet = new Dictionary<string, TokenType>();
+        private static IDictionary<string, TokenType> map = new Dictionary<string, TokenType>();
+
         private StreamReader _streamReader;
         private string[] _files;
 
         //подача нескольких слов
         public readonly List<List<Token>> s_tokens = new List<List<Token>>();
         private int _index;
+        //private static readonly Dictionary<string, Recognizer.IVocabulary> map = new Dictionary<string, Recognizer.IVocabulary>();
+        private static readonly Dictionary<char, char> s_ECSet = new Dictionary<char, char>();
+        private static Recognizer a = new Recognizer();
 
-        static Lexer()
+        public static string[] LiteralNames = {
+        null, "///", null, null, null, null, null, "#", "abstract",
+        "add", "alias", "__arglist", "as", "ascending", "async", "await",
+        "base", "bool", "break", "by", "byte", "case", "catch",
+        "char", "checked", "class", "const", "continue", "decimal",
+        "default", "delegate", "descending", "do", "double", "dynamic",
+        "else", "enum", "equals", "event", "explicit", "extern", "false",
+        "finally", "fixed", "float", "for", "foreach", "from", "get",
+        "goto", "group", "if", "implicit", "in", "int", "interface",
+        "internal", "into", "is", "join", "let", "lock", "long",
+        "nameof", "namespace", "new", "null", "object", "on", "operator",
+        "orderby", "out", "override", "params", "partial", "private",
+        "protected", "public", "readonly", "ref", "remove", "return",
+        "sbyte", "sealed", "select", "set", "short", "sizeof", "stackalloc",
+        "static", "string", "struct", "switch", "this", "throw", "true",
+        "try", "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort",
+        "using", "var", "virtual", "void", "volatile", "when", "where",
+        "while", "yield", null, null, null, null, null, null, null, null,
+        null, null, "{", "}", "[", "]", "(", ")", ".", ",", ":",
+        ";", "+", "-", "*", "/", "%", "&", "|", "^", "!",
+        "~", "=", "<", ">", "?", "::", "??", "++", "--", "&&",
+        "||", "->", "==", "!=", "<=", ">=", "+=", "-=", "*=",
+        "/=", "%=", "&=", "|=", "^=", "<<", "<<=", "{{", null,
+        null, null, null, null, null, null, null, null, null, "define", "undef",
+        "elif", "endif", "line", null, null, null, null, null, "hidden",
+        null, null, null, "}}"
+    };
+        public Lexer()
         {
-            s_keywordsSet.Add("if", TokenType.IfKeyword);
-            s_keywordsSet.Add("else", TokenType.ElseKeyword);
-            s_keywordsSet.Add("while", TokenType.WhileKeyword);
-            s_keywordsSet.Add("for", TokenType.ForKeyword);
-            s_keywordsSet.Add("break", TokenType.BreakKeyword);
-            s_keywordsSet.Add("continue", TokenType.ContinueKeyword);
-            s_keywordsSet.Add("return", TokenType.ReturnKeyword);
-            s_keywordsSet.Add("class", TokenType.ClassKeyword);
-            s_keywordsSet.Add("struct", TokenType.StructKeyword);
-            s_keywordsSet.Add("interface", TokenType.InterfaceKeyword);
-            s_keywordsSet.Add("namespace", TokenType.NameSpaceKeyword);
-            s_keywordsSet.Add("using", TokenType.UsingKeyword);
-            s_keywordsSet.Add("func", TokenType.FuncKeyword);
-            s_keywordsSet.Add("var", TokenType.VarKeyword);
-            s_keywordsSet.Add("let", TokenType.LetKeyword);
-            s_keywordsSet.Add("int", TokenType.IntKeyword);
-            s_keywordsSet.Add("double", TokenType.DoubleKeyword);
-            s_keywordsSet.Add("new", TokenType.NewKeyword);
-            s_keywordsSet.Add("override", TokenType.OverrideKeyword);
-            s_keywordsSet.Add("static", TokenType.StaticKeyword);
-            s_keywordsSet.Add("true", TokenType.TrueKeyword);
-            s_keywordsSet.Add("false", TokenType.FalseKeyword);
-            s_keywordsSet.Add("cast", TokenType.CastKeyword);
-            s_keywordsSet.Add("public", TokenType.PublicKeyword);
-
+            map = a.TokenTypeMap;
             s_ECSet.Add('\"', '\"');
             s_ECSet.Add('\'', '\'');
             s_ECSet.Add('\\', '\\');
-            s_ECSet.Add('b', '\b'); //возврат на шаг
-            s_ECSet.Add('f', '\f'); //прогон страницы
-            s_ECSet.Add('t', '\t'); //горизонтальная табуляция
-            s_ECSet.Add('r', '\r'); //Возврат каретки
-            s_ECSet.Add('n', '\n'); //перевод строки
-
-            s_signSet.Add("--", TokenType.Sign);//приоритетный -
-            s_signSet.Add("++", TokenType.Sign);
-            s_signSet.Add("[", TokenType.OpenBracket);
-            s_signSet.Add("]", TokenType.CloseBracket);
-            s_signSet.Add("(", TokenType.OpenParen);
-            s_signSet.Add(")", TokenType.CloseParen);
-            s_signSet.Add("-", TokenType.Sign);
-            s_signSet.Add("+", TokenType.Sign);
-            s_signSet.Add("!", TokenType.Sign);
-            s_signSet.Add("/", TokenType.Sign);
-            s_signSet.Add("*", TokenType.Sign);
-            s_signSet.Add("%", TokenType.Sign);
-            s_signSet.Add(">", TokenType.Sign);
-            s_signSet.Add(">=", TokenType.Sign);
-            s_signSet.Add("<", TokenType.Sign);
-            s_signSet.Add("<=", TokenType.Sign);
-            s_signSet.Add("<<", TokenType.LeftShift);
-            s_signSet.Add(">>", TokenType.RightShift);
-            s_signSet.Add("==", TokenType.Sign);
-            s_signSet.Add("!=", TokenType.Sign);
-            s_signSet.Add("&&", TokenType.Sign);
-            s_signSet.Add("&", TokenType.Sign);
-            s_signSet.Add("||", TokenType.Sign);
-            s_signSet.Add(",", TokenType.Sign);
-            s_signSet.Add(".", TokenType.Sign);
-            s_signSet.Add(":", TokenType.Colon);
-            s_signSet.Add("=", TokenType.Assign);
-            s_signSet.Add("+=", TokenType.Assign);
-            s_signSet.Add("-=", TokenType.Assign);
-            s_signSet.Add("*=", TokenType.Assign);
-            s_signSet.Add("/=", TokenType.Assign);
-            s_signSet.Add("%=", TokenType.Assign);
-            s_signSet.Add(";", TokenType.Semicolon);
-            s_signSet.Add("{", TokenType.OpenBrace);
-            s_signSet.Add("}", TokenType.CloseBrace);
+            s_ECSet.Add('b', '\b');
+            s_ECSet.Add('f', '\f');
+            s_ECSet.Add('t', '\t');
+            s_ECSet.Add('r', '\r');
+            s_ECSet.Add('n', '\n');
         }
 
-        public Token Next()
+
+        private Token Next()
         {
 
             while (true)
@@ -110,7 +77,7 @@ namespace MyCore.LexicalAnalysis
                 NextToken = s_tokens[FileIndex][_index++];
                 switch (NextToken.Type)
                 {
-                    case TokenType.EOL:
+                    case TokenType.WHITESPACES:
                         Line++;
                         continue;
                     case TokenType.EOF:
@@ -128,41 +95,19 @@ namespace MyCore.LexicalAnalysis
         }
 
 
-
-        public Token Back()
-        {
-            _index--;
-            while (true)
-            {
-                if (_index == 0)
-                {
-                    FileIndex--;
-                    _index = s_tokens[FileIndex].Count - 1;
-                }
-                NextToken = s_tokens[FileIndex][--_index];
-                NextTokenType = NextToken.Type;
-                switch (NextTokenType)
-                {
-                    case TokenType.Blank:
-                        continue;
-                    case TokenType.EOL:
-                        Line++;
-                        continue;
-                }
-                break;
-            }
-            _index++;
-            NextTokenContent = NextToken.Content;
-            return NextToken;
-        }
-
-
         public void Scan(string[] files)
         {
             _files = files;
             for (int i = 0; i < _files.Length; i++)
                 s_tokens.Add(new List<Token>());
-            ScanFiles();
+
+            for (int i = 0; i < _files.Length; i++, FileIndex = i)
+            {
+                _streamReader = new StreamReader(new FileStream(_files[i], FileMode.Open));
+
+                ScanFiles(_streamReader);
+            }
+
             FileIndex = 0;
             Line = 1;
             _index = 0;
@@ -171,48 +116,114 @@ namespace MyCore.LexicalAnalysis
         }
 
 
-        private void ScanFiles()
+        private void ScanFiles(StreamReader _streamReader)
         {
-            for (int i = 0; i < _files.Length; i++, FileIndex = i)
+            Readch();
+            for (; !(_streamReader.BaseStream.Length < Column); ScanBlank())
             {
-                _streamReader = new StreamReader(new FileStream(_files[i], FileMode.Open));
-                Readch();
-                for (; !_streamReader.EndOfStream; ScanBlank())
+                if (char.IsLetter(_peek) || _peek == '_' || _peek == '&' || _peek == '-')
                 {
-                    if (char.IsLetter(_peek) || _peek == '_')
-                    {
-                        ScanIdentifer();
-                        continue;
-                    }
-                    if (_peek == '"')
-                    {
-                        ScanString();
-                        continue;
-                    }
-                    if (_peek == '\'')
-                    {
-                        ScanChar();
-                        continue;
-                    }
-                    if (_peek == '/')
-                    {
-                        JumpComment();
-                        continue;
-                    }
-                    if (char.IsSymbol(_peek) || s_signSet.ContainsKey(_peek.ToString()))
-                    {
-                        ScanSign();
-                        continue;
-                    }
-                    if (char.IsNumber(_peek))
-                    {
-                        ScanNumber();
-                        continue;
-                    }
-                    return;
+                    ScanIdentifer();
+                    continue;
                 }
 
-                _streamReader.Close();
+                if (_peek == '"')
+                {
+                    ScanString();
+                    continue;
+                }
+                if (_peek == '\'')
+                {
+                    ScanChar();
+                    continue;
+                }
+                if (_peek == '/')
+                {
+                    JumpComment();
+                    continue;
+                }
+                if (char.IsSymbol(_peek) || map.ContainsKey(_peek.ToString()))
+                {
+                    ScanSign();
+                    continue;
+                }
+
+                if (char.IsNumber(_peek))
+                {
+                    ScanNumber();
+                    continue;
+                }
+                return;
+            }
+
+            _streamReader.Close();
+
+        }
+        private void ScanIdentifer()
+        {
+            StringBuilder sb = new StringBuilder();
+            do
+            {
+                sb.Append(_peek);
+                Readch();
+            } while (char.IsLetterOrDigit(_peek) || _peek == '_' || _peek == '&' || _peek == '-');
+
+            string s = sb.ToString();
+            if (map.ContainsKey(s))
+                AddToken(map[s], s, -s.Length);
+            else
+                AddToken(TokenType.iNDIFICATOR, s, -s.Length);
+        }
+
+        private void AddToken(TokenType type, int offset)
+        {
+            s_tokens[FileIndex].Add(new Token(type, Line, Column + offset));
+            switch (type)
+            {
+                case TokenType.EOF:
+                    FileIndex++;
+                    break;
+                case TokenType.WHITESPACES:
+                    Line++;
+                    break;
+            }
+            Column = 0;
+        }
+
+        private void AddToken(TokenType type, string content, int offset)
+        {
+            Token token = new Token(type, Line, Column + offset);
+            token.Content = content;
+            s_tokens[FileIndex].Add(token);
+        }
+
+        private void Readch()
+        {
+            _peek = (char)_streamReader.Read();
+            Column++;
+        }
+        private void ScanBlank()
+        {
+            for (; ; Readch())
+            {
+                switch (_peek)
+                {
+                    case ' ':
+                    case '\t':
+                        continue;
+                    case '\r':
+                        Column = 0;
+                        continue;
+                    case '\n':
+                        AddToken(TokenType.WHITESPACES, 0);
+                        continue;
+                }
+                if (_streamReader.BaseStream.Length < Column)
+                {
+                    AddToken(TokenType.EOF, 0);
+                    break;
+                }
+                break;
             }
         }
 
@@ -223,42 +234,28 @@ namespace MyCore.LexicalAnalysis
             if (char.IsSymbol(_peek))
             {
                 string s = c.ToString() + _peek;
-                if (s_signSet.ContainsKey(s))
+                if (map.ContainsKey(s))
                 {
-                    AddToken(s_signSet[s], s, -1);
+                    AddToken(map[s], s, -1);
                     Readch();
                     return;
                 }
-                if (s_signSet.ContainsKey(_peek.ToString()))
+                if (map.ContainsKey(_peek.ToString()))
                 {
-                    if (s_signSet.ContainsKey(c.ToString())) AddToken(s_signSet[c.ToString()], c.ToString(), -1);
+                    if (map.ContainsKey(c.ToString())) AddToken(map[c.ToString()], c.ToString(), -1);
                     else return;
-                    AddToken(s_signSet[_peek.ToString()], _peek.ToString(), 0);
+                    AddToken(map[_peek.ToString()], _peek.ToString(), 0);
                     Readch();
                     return;
                 }
                 else return;
             }
-            if (s_signSet.ContainsKey(c.ToString()))
-                AddToken(s_signSet[c.ToString()], c.ToString(), -1);
+            if (map.ContainsKey(c.ToString()))
+                AddToken(map[c.ToString()], c.ToString(), -1);
             else return;
         }
 
-        private void ScanIdentifer()
-        {
-            StringBuilder sb = new StringBuilder();
-            do
-            {
-                sb.Append(_peek);
-                Readch();
-            } while (char.IsLetterOrDigit(_peek) || _peek == '_');
 
-            string s = sb.ToString();
-            if (s_keywordsSet.ContainsKey(s))
-                AddToken(s_keywordsSet[s], s, -s.Length);
-            else
-                AddToken(TokenType.Identifer, s, -s.Length);
-        }
 
         private void ScanNumber()
         {
@@ -271,17 +268,17 @@ namespace MyCore.LexicalAnalysis
 
             if (char.IsLetter(_peek) || _peek == '_')
             {
-                AddToken(TokenType.ERRORTOKEN, sb.ToString(), -sb.Length);
+                AddToken(TokenType.ERROR, sb.ToString(), -sb.Length);
                 return;
             } //TODO:Идентификатор ошибки не может начинаться с цифры
             if (_peek != '.')
             {
                 if (int.TryParse(sb.ToString(), out int n))
                 {
-                    AddToken(TokenType.NumericLiteralToken, sb.ToString(), -sb.Length);
+                    AddToken(TokenType.INTEGER_LITERAL, sb.ToString(), -sb.Length);
                     return;
                 }
-                AddToken(TokenType.ERRORTOKEN, sb.ToString(), -sb.Length);
+                AddToken(TokenType.ERROR, sb.ToString(), -sb.Length);
                 return; //TODO:константа слишком велика
             }
 
@@ -311,45 +308,22 @@ namespace MyCore.LexicalAnalysis
                     }
                 }
 
-                AddToken(TokenType.ERRORTOKEN, sb.ToString(), -sb.Length);
+                AddToken(TokenType.ERROR, sb.ToString(), -sb.Length);
                 return;
             }
             //TODO:Идентификатор ошибки не может начинаться с цифры
 
             if (float.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out _))
-                AddToken(TokenType.FloatLiteralToken, sb.ToString(), -sb.Length);
+                AddToken(TokenType.REAL_LITERAL, sb.ToString(), -sb.Length);
             else
             {
-                AddToken(TokenType.ERRORTOKEN, sb.ToString(), -sb.Length);
+                AddToken(TokenType.ERROR, sb.ToString(), -sb.Length);
             }
             //AddToken(TokenType.ERRORTOKEN, sb.ToString(), -sb.Length);
             return; //TODO: константа с плавающей запятой выходит за пределы диапазона
         }
 
-        private void ScanBlank()
-        {
-            for (; ; Readch())
-            {
-                switch (_peek)
-                {
-                    case ' ':
-                    case '\t':
-                        continue;
-                    case '\r':
-                        Column = 0;
-                        continue;
-                    case '\n':
-                        AddToken(TokenType.EOL, 0);
-                        continue;
-                }
-                if (_streamReader.EndOfStream)
-                {
-                    AddToken(TokenType.EOF, 0);
-                    break;
-                }
-                break;
-            }
-        }
+
 
         private void JumpComment()
         {
@@ -359,7 +333,7 @@ namespace MyCore.LexicalAnalysis
                 {
                     if (_peek == '\n')
                     {
-                        AddToken(TokenType.EOL, 0);
+                        AddToken(TokenType.WHITESPACES, 0);
                         Readch();
                         return;
                     }
@@ -375,7 +349,7 @@ namespace MyCore.LexicalAnalysis
                 {
                     if (_peek == '\n')
                     {
-                        AddToken(TokenType.EOL, 0);
+                        AddToken(TokenType.WHITESPACES, 0);
                         Readch();
                     }
 
@@ -397,9 +371,9 @@ namespace MyCore.LexicalAnalysis
                 }
             }
 
-            AddToken(TokenType.Sign, "/", -1);
+            AddToken(TokenType.DIV, "/", -1);
         }
-
+      
         private void ScanString()
         {
             Readch();
@@ -414,7 +388,7 @@ namespace MyCore.LexicalAnalysis
                 }
                 sb.Append(_peek);
             }
-            AddToken(TokenType.StringLiteralToken, sb.ToString(), -sb.Length - 1);
+            AddToken(TokenType.STRING, sb.ToString(), -sb.Length - 1);
             Readch();
         }
 
@@ -426,53 +400,30 @@ namespace MyCore.LexicalAnalysis
                 char ec = ScanEC();
                 Readch();
                 if (_peek != '\'') { return; } //TODO:слишком много символов
-                AddToken(TokenType.CharacterLiteralToken, ec.ToString(), -3);
+                AddToken(TokenType.CHARACTER_LITERAL, ec.ToString(), -3);
                 Readch();
                 return;
             }
             char c = _peek;
             Readch();
-            if (_peek != '\'') { AddToken(TokenType.ERRORTOKEN, c.ToString(), -2); 
-                return; } //TODO:слишком много символов
-            AddToken(TokenType.CharacterLiteralToken, c.ToString(), -2);
+            if (_peek != '\'')
+            {
+                AddToken(TokenType.ERROR, c.ToString(), -2);
+                return;
+            } //TODO:слишком много символов
+            AddToken(TokenType.CHARACTER_LITERAL, c.ToString(), -2);
             Readch();
         }
 
         private char ScanEC()
         {
             Readch();
-            if (!s_ECSet.ContainsKey(_peek)) { return '\0'; } //TODO:Escape символ
+            if (!map.ContainsKey(_peek.ToString())) { return '\0'; } //TODO:Escape символ           
             return s_ECSet[_peek];
         }
 
-
-        private void Readch()
-        {
-            _peek = (char)_streamReader.Read();
-            Column++;
-        }
-
-        private void AddToken(TokenType type, int offset)
-        {
-            s_tokens[FileIndex].Add(new Token(type, Line, Column + offset));
-            switch (type)
-            {
-                case TokenType.EOF:
-                    FileIndex++;
-                    break;
-                case TokenType.EOL:
-                    Line++;
-                    break;
-            }
-            Column = 0;
-        }
-
-        private void AddToken(TokenType type, string content, int offset)
-        {
-            Token token = new Token(type, Line, Column + offset);
-            token.Content = content;
-            s_tokens[FileIndex].Add(token);
-        }
-
     }
+
 }
+
+
