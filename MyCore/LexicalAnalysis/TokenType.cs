@@ -10,7 +10,7 @@
         DELIMITED_COMMENT = 5,
         WHITESPACES = 6,
         SHARP = 7,
-        iNDIFICATOR = 8,
+        IDENTIFIERS = 8,
 
         ADD = 9,
         ALIAS = 10,

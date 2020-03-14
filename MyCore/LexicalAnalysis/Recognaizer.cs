@@ -4,9 +4,9 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace MyCore.LexicalAnalysis
 {
-    /// <summary>Get a map from token names to token types.</summary>
+    /// <summary>Get a TokenTypeMap from token names to token types.</summary>
     /// <remarks>
-    /// Get a map from token names to token types.
+    /// Get a TokenTypeMap from token names to token types.
     /// <p>Used for XPath and tree pattern compilation.</p>
     /// </remarks>
     public class Recognizer
@@ -19,14 +19,16 @@ namespace MyCore.LexicalAnalysis
             for (int i = 1; i <= Enum.GetNames(typeof(TokenType)).Length - 1; i++)
             {
                 TokenType myTest = (TokenType)i;
-                string literalName = myTest.ToString();
-
-                result[literalName] = (TokenType)i;
-
+                
                 string symbolicName = Lexer.LiteralNames[i];
+
                 if (symbolicName != null)
                 {
                     result[symbolicName] = (TokenType)i;
+                }
+                else {
+                    string literalName = myTest.ToString();
+                    result[literalName] = (TokenType)i;
                 }
             }
             result["EOF"] = TokenType.EOF;

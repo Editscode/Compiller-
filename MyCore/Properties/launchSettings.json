@@ -2,8 +2,8 @@
   "profiles": {
     "MyCore": {
       "commandName": "Project",
-      "commandLineArgs": "001.csc 002.csc 003.csc 004.csc 005.csc 006.csc 007.csc 008.csc 009.csc 010.csc 011.csc 012.csc 013.csc 014.csc 015.csc 016.csc 017.csc 018.csc 019.csc 020.csc 021.csc 023.csc 024.csc 025.csc 026.csc 027.csc 028.csc 029.csc 030.csc 031.csc 032.csc 033.csc 034.csc 035.csc 036.csc 037.csc 038.csc 039.csc 040.csc 041.csc 042.csc 043.csc 044.csc 045.csc 046.csc 047.csc 048.csc 049.csc 050.csc ",
-      "workingDirectory": "C:\\Users\\korob\\Desktop\\test"
+      "commandLineArgs": "test.csc",
+      "workingDirectory": "C:\\Users\\VRLAB\\Desktop\\test"
     }
   }
 }
