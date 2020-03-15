@@ -9,14 +9,23 @@ namespace MyCore
     {
         public static void Compile(string[] files)
         {
-            Lexer lexer = new Lexer();
-            StreamReader _streamReader = new StreamReader(new FileStream("2.cs", FileMode.Open));
-            lexer.Scan(_streamReader);
-            var bac = lexer.s_tokens;
-            for (int i = 0; i < bac.Count; i++)
+            
+            for (int b = 38; b < 40; b++)
             {
-                Console.WriteLine("{0}\t | {1}\t | {3}\t | {2}\t", bac[i].Line, bac[i].Column, bac[i].Type, bac[i].Content);
+                Lexer lexer = new Lexer();
+                StreamReader _streamReader = new StreamReader(new FileStream($"{b}.cs", FileMode.Open));
+                lexer.Scan(_streamReader);
+                var bac = lexer.s_tokens;
+                for (int i = 0; i < bac.Count; i++)
+                {
+                    if (bac[i].Type != TokenType.WHITESPACES)
+                    {
+                        Console.WriteLine("{0}\t | {1}\t | {3}\t | {2}\t", bac[i].Line, bac[i].Column, bac[i].Type, bac[i].Content);
+                    }
+                }
+                Console.WriteLine("_____________________________"+b);
             }
+          
             //for (int b = 0; b < files.Length; b++)
             //{
             //    for (int i = 0; i < lexer.s_tokens[b].Count; i++)
