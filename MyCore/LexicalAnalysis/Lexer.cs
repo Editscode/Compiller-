@@ -277,11 +277,12 @@ namespace MyCore.LexicalAnalysis
         {
             char c = _peek[Column];
             Readch();
-            if (char.IsSymbol(_peek[Column]) || _peek[Column] == '&')
+            if (char.IsSymbol(_peek[Column]) || _peek[Column] == '&' || _peek[Column] == ':' || _peek[Column] == '{' || _peek[Column] == '}' || _peek[Column] == '?' || _peek[Column] == '-')
             {
                 string s = c.ToString() + _peek[Column];
                 if (tokenTypeMap.ContainsKey(s))
                 {
+                    var zxr = 55e+2;
                     AddToken(tokenTypeMap[s], s, Column);
                     Readch();
                     return;
