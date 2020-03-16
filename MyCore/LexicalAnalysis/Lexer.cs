@@ -10,6 +10,7 @@ namespace MyCore.LexicalAnalysis
 
         private int Line;
         private int Column;
+        private int realColumn = 0;
 
         private List<char> _peek = new List<char>();
 
@@ -85,6 +86,7 @@ namespace MyCore.LexicalAnalysis
         private void Readch()
         {
             Column++;
+            realColumn++;
         }
         private void Stop()
         {
@@ -106,6 +108,7 @@ namespace MyCore.LexicalAnalysis
                         continue;
                     case '\n':
                         AddToken(TokenType.WHITESPACES, 0);
+                        realColumn = 0;
                         continue;
                 }
                 break;
@@ -170,7 +173,7 @@ namespace MyCore.LexicalAnalysis
 
         private void AddToken(TokenType type, string content, int offset)
         {
-            Token token = new Token(type, Line, Column + offset);
+            Token token = new Token(type, Line, realColumn + offset);
             token.Content = content;
             s_tokens.Add(token);
         }
@@ -282,16 +285,15 @@ namespace MyCore.LexicalAnalysis
                 string s = c.ToString() + _peek[Column];
                 if (tokenTypeMap.ContainsKey(s))
                 {
-                    var zxr = 55e+2;
-                    AddToken(tokenTypeMap[s], s, Column);
+                    AddToken(tokenTypeMap[s], s, -1);
                     Readch();
                     return;
                 }
                 if (tokenTypeMap.ContainsKey(_peek[Column].ToString()))
                 {
-                    if (tokenTypeMap.ContainsKey(c.ToString())) AddToken(tokenTypeMap[c.ToString()], c.ToString(), Column);
+                    if (tokenTypeMap.ContainsKey(c.ToString())) AddToken(tokenTypeMap[c.ToString()], c.ToString(), -1);
                     else return;
-                    AddToken(tokenTypeMap[_peek[Column].ToString()], _peek[Column].ToString(), Column);
+                    AddToken(tokenTypeMap[_peek[Column].ToString()], _peek[Column].ToString(), 0);
                     Readch();
                     return;
                 }

@@ -3,7 +3,7 @@
     "BCompiller": {
       "commandName": "Project",
       "commandLineArgs": "test.csc",
-      "workingDirectory": "C:\\Users\\VRLAB\\Desktop\\test"
+      "workingDirectory": "C:\\Users\\korob\\Desktop\\GitHub\\Compiller-\\TestV2"
     }
   }
 }

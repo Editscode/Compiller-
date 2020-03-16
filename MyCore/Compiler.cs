@@ -13,7 +13,7 @@ namespace MyCore
             for (int b = 0; b < 53; b++)
             {
                 Lexer lexer = new Lexer();
-                StreamReader _streamReader = new StreamReader(new FileStream($"TestV2\\{b}.cs", FileMode.Open));
+                StreamReader _streamReader = new StreamReader(new FileStream($"{b}.cs", FileMode.Open));
                 lexer.Scan(_streamReader);
                 var bac = lexer.s_tokens;
                 for (int i = 0; i < bac.Count; i++)
