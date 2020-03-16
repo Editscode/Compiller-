@@ -9,8 +9,8 @@ namespace MyCore
     {
         public static void Compile(string[] files)
         {
-            
-            for (int b = 0; b < 53; b++)
+            string text = "";
+            for (int b = 0; b < 55; b++)
             {
                 Lexer lexer = new Lexer();
                 StreamReader _streamReader = new StreamReader(new FileStream($"{b}.cs", FileMode.Open));
@@ -20,10 +20,19 @@ namespace MyCore
                 {
                     if (bac[i].Type != TokenType.WHITESPACES)
                     {
+                        text += bac[i].Line + "\t" + bac[i].Column + "\t" + bac[i].Content + "\t" + bac[i].Type + "\n";
                         Console.WriteLine("{0}\t | {1}\t | {3}\t | {2}\t", bac[i].Line, bac[i].Column, bac[i].Type, bac[i].Content);
                     }
                 }
-                Console.WriteLine("_____________________________"+b);
+                Console.WriteLine("_____________________________" + b);
+                using (FileStream fstream = new FileStream(@$"\out\{b}.txt", FileMode.Create))
+                        {
+                            byte[] array = System.Text.Encoding.Default.GetBytes(text);
+                            fstream.Write(array, 0, array.Length);
+                        }
+                text = "";
+
+
             }
           
             //for (int b = 0; b < files.Length; b++)

@@ -10,7 +10,7 @@ namespace MyCore.LexicalAnalysis
 
         private int Line;
         private int Column;
-        private int realColumn = 0;
+        private int realColumn = 1;
 
         private List<char> _peek = new List<char>();
 
@@ -59,8 +59,9 @@ namespace MyCore.LexicalAnalysis
     };
         public Lexer()
         {
+            
             Recognizer recognizer = new Recognizer(LiteralNames);
-            tokenTypeMap = recognizer.TokenTypeMap;
+            tokenTypeMap = recognizer.TokenTypeMap;  
         }
         public void Scan(StreamReader stream)
         {
@@ -107,8 +108,8 @@ namespace MyCore.LexicalAnalysis
                         Stop();
                         continue;
                     case '\n':
-                        AddToken(TokenType.WHITESPACES, 0);
                         realColumn = 0;
+                        Line++;
                         continue;
                 }
                 break;
@@ -118,57 +119,51 @@ namespace MyCore.LexicalAnalysis
 
         private void ScanLexem(List<char> _peek)
         {
-            List<Token> tokens = new List<Token>();
             this._peek = _peek;
             for (; Column < this._peek.Count; ScanBlank())
             {
-                if (this._peek[Column] == '"' || this._peek[Column] == '@')
+                if (this._peek[Column] == '"')
                 {
                     ScanString();
-                    continue;
                 }
-                if (char.IsLetter(this._peek[Column]) || this._peek[Column] == '_')
+                else if (this._peek[Column] == '@')
+                {
+                    Readch();
+                    if (_peek[Column] != '"')
+                    {
+                        AddToken(TokenType.ERROR, 0);
+                        Stop();
+                    }
+                    ScanString();
+                }
+                else if (char.IsLetter(this._peek[Column]) || this._peek[Column] == '_')
                 {
                     ScanIdentifer();
-                    continue;
                 }
-                if (this._peek[Column] == '\'')
+                else if (this._peek[Column] == '\'')
                 {
                     ScanChar();
-                    continue;
                 }
-                if (this._peek[Column] == '/')
+                else if (this._peek[Column] == '/')
                 {
                     JumpComment();
-                    continue;
                 }
-                if (char.IsSymbol(this._peek[Column]) || tokenTypeMap.ContainsKey(this._peek[Column].ToString()))
+                else if (tokenTypeMap.ContainsKey(this._peek[Column].ToString()))
                 {
                     ScanSign();
-                    continue;
                 }
-                if (char.IsNumber(this._peek[Column]))
+                else if (char.IsNumber(this._peek[Column]))
                 {
                     ScanNumber();
-                    continue;
                 }
+                else
+                    Stop();
             }
-            return;
         }
 
         private void AddToken(TokenType type, int offset)
         {
             s_tokens.Add(new Token(type, Line, Column + offset));
-            switch (type)
-            {
-                case TokenType.EOF:
-                    break;
-                case TokenType.WHITESPACES:
-                    Line++;
-                    break;
-                case TokenType.ERROR:
-                    break;
-            }
         }
 
         private void AddToken(TokenType type, string content, int offset)
@@ -189,45 +184,22 @@ namespace MyCore.LexicalAnalysis
         private void ScanString()
         {
             Readch();
-            if (_peek[Column] == '"')
+            StringBuilder sb = new StringBuilder();
+            for (; _peek[Column] != '"'; Readch())
             {
-                Readch();
-                StringBuilder sb = new StringBuilder();
-                for (; _peek[Column] != '"'; Readch())
+                if (_peek[Column] == '\n')
                 {
-                    if (_peek[Column] == '\n')
-                    {
-                        AddToken(TokenType.ERROR, sb.ToString(), -sb.Length); Stop(); return;
-                    } //TODO:Вывод ошибки
-                    if (_peek[Column] == '\\')
-                    {
-                        sb.Append(ScanEC());
-                        continue;
-                    }
-                    sb.Append(_peek[Column]);
-                }
-                AddToken(TokenType.VERBATIUM_STRING, sb.ToString(), -sb.Length - 1);
-                Readch();
-            }
-            else
-            {
-                StringBuilder sb = new StringBuilder();
-                for (; _peek[Column] != '"'; Readch())
+                    AddToken(TokenType.ERROR, sb.ToString(), -sb.Length); Stop(); return;
+                } //TODO:Вывод ошибки
+                if (_peek[Column] == '\\')
                 {
-                    if (_peek[Column] == '\n')
-                    {
-                        AddToken(TokenType.ERROR, sb.ToString(), -sb.Length); Stop(); return;
-                    } //TODO:Вывод ошибки
-                    if (_peek[Column] == '\\')
-                    {
-                        sb.Append(ScanEC());
-                        continue;
-                    }
-                    sb.Append(_peek[Column]);
+                    sb.Append(ScanEC());
+                    continue;
                 }
-                AddToken(TokenType.STRING, sb.ToString(), -sb.Length - 1);
-                Readch();
+                sb.Append(_peek[Column]);
             }
+            AddToken(TokenType.STRING, sb.ToString(), -sb.Length - 1);
+            Readch();
         }
         private void ScanIdentifer()
         {
@@ -319,48 +291,12 @@ namespace MyCore.LexicalAnalysis
             
             if (char.IsLetter(_peek[Column]) || _peek[Column] == '_')
             {
-                if (_peek[Column] == 'e')
-                {
-                    sb.Append(_peek[Column]);
-                    Readch();
-                    if (char.IsDigit(_peek[Column]) || _peek[Column] == '+' || _peek[Column] == '-')
-                    {
-                        sb.Append(_peek[Column]);
-                        Readch();
-                        while (char.IsDigit(_peek[Column]))
-                        {
-                            sb.Append(_peek[Column]);
-                            Readch();
-                        }
-                        if (double.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out _))
-                        {
-                            AddToken(TokenType.DOUBLE, sb.ToString(), -sb.Length);
-                            return;
-                        }
-                        else
-                        {
-                            AddToken(TokenType.ERROR, sb.ToString(), -sb.Length);
-                            Stop();
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        AddToken(TokenType.ERROR, sb.ToString(), -sb.Length);
-                        Stop();
-                        return;
-                    }
-                }
-                else
-                {
-                    AddToken(TokenType.ERROR, sb.ToString(), -sb.Length);
-                    Stop();
-                    return;
-                }
+                DoubleleMetod(sb);
+                return;
             } //TODO:Идентификатор ошибки не может начинаться с цифры
 
             ///сканирование на int
-            
+
             if (_peek[Column] != '.')
             {
                 if (int.TryParse(sb.ToString(), out int n))
@@ -391,30 +327,45 @@ namespace MyCore.LexicalAnalysis
             
             if (char.IsLetter(_peek[Column]) || _peek[Column] == '_')
             {
-                if (_peek[Column] == 'e')
+                DoubleleMetod(sb);
+                return;
+
+            }
+
+            ///сканирование на float
+
+            if (float.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out _))
+            {
+                AddToken(TokenType.REAL_LITERAL, sb.ToString(), -sb.Length);
+            }
+            else
+            {
+                AddToken(TokenType.ERROR, sb.ToString(), -sb.Length);
+                Stop();
+            }
+
+            return; //TODO: константа с плавающей запятой выходит за пределы диапазона
+        }
+
+        private void DoubleleMetod(StringBuilder sb)
+        {
+            if (_peek[Column] == 'e')
+            {
+                sb.Append(_peek[Column]);
+                Readch();
+                if (char.IsDigit(_peek[Column]) || _peek[Column] == '+' || _peek[Column] == '-')
                 {
                     sb.Append(_peek[Column]);
                     Readch();
-                    if (char.IsDigit(_peek[Column]) || _peek[Column] == '+' || _peek[Column] == '-')
+                    while (char.IsDigit(_peek[Column]))
                     {
                         sb.Append(_peek[Column]);
                         Readch();
-                        while (char.IsDigit(_peek[Column]))
-                        {
-                            sb.Append(_peek[Column]);
-                            Readch();
-                        }
-                        if (double.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out _))
-                        {
-                            AddToken(TokenType.DOUBLE, sb.ToString(), -sb.Length);
-                            return;
-                        }
-                        else
-                        {
-                            AddToken(TokenType.ERROR, sb.ToString(), -sb.Length);
-                            Stop();
-                            return;
-                        }
+                    }
+                    if (double.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out _))
+                    {
+                        AddToken(TokenType.REAL_LITERAL, sb.ToString(), -sb.Length);
+                        return;
                     }
                     else
                     {
@@ -429,24 +380,15 @@ namespace MyCore.LexicalAnalysis
                     Stop();
                     return;
                 }
-
             }
-
-            ///сканирование на float
-
-            if (float.TryParse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out _))
-            {
-                AddToken(TokenType.REAL_LITERAL, sb.ToString(), -sb.Length);
-            }
-
             else
             {
                 AddToken(TokenType.ERROR, sb.ToString(), -sb.Length);
                 Stop();
+                return;
             }
-
-            return; //TODO: константа с плавающей запятой выходит за пределы диапазона
         }
+
         private void JumpComment()
         {
             Readch();
